@@ -1,0 +1,10 @@
+/data
+/weights
+/runs
+/pictures
+/__pycache__
+*.pt
+*.jpeg
+*.pkl
+*.zip
+
