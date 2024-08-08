@@ -62,18 +62,17 @@ hands = mp_hands.Hands()
 
 
 my_drone = TelloSwarm.fromIps([
-    "192.168.0.3",
     "192.168.0.2",
-    "192.168.0.5",
-    "192.168.0.7"
+    "192.168.0.3",
 ])
 
 my_drone.connect()
 
-
+print('BATTERY-----------------------------------------------------------------')
 for drone in my_drone:
     print(drone)
     print(drone.get_battery())
+print('BATTERY-----------------------------------------------------------------')
 
 
 """ Face Recognition Embeddings"""
@@ -156,11 +155,11 @@ def draw_face_and_hands(frame, face_landmarks, hand_landmarks):
             cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
             
 
-            mp_drawing.draw_landmarks(
-                frame, landmarks, mp_face_mesh.FACEMESH_TESSELATION,
-                mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1, circle_radius=1),
-                mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1, circle_radius=1)
-            )
+            # mp_drawing.draw_landmarks(
+            #     frame, landmarks, mp_face_mesh.FACEMESH_TESSELATION,
+            #     mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1, circle_radius=1),
+            #     mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1, circle_radius=1)
+            # )
 
     # Draw the hands landmarks and bounding box
     if hand_landmarks:
