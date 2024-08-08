@@ -33,6 +33,7 @@ signal_backward=False
 signal_forward=False
 is_rotating_clockwise = False
 is_rotating_counter_clockwise = False
+execution_counter=0
 cmd = "_"
 
 original_frame = None
@@ -58,22 +59,27 @@ hands = mp_hands.Hands()
 
 
 
-
-
-
 my_drone = TelloSwarm.fromIps([
-    "192.168.0.3",
     "192.168.0.2",
-    "192.168.0.5",
-    "192.168.0.7"
+    # "192.168.0.3",
+])
+
+my_drone_2 = TelloSwarm.fromIps([
+    "192.168.0.3",
+    # "192.168.0.7",
 ])
 
 my_drone.connect()
+my_drone_2.connect()
 
 
 for drone in my_drone:
-    print(drone)
-    print(drone.get_battery())
+    # print(drone)
+    print("BATTERY: ", drone.get_battery())
+
+for drone in my_drone_2:
+    # print(drone)
+    print("BATTERY: ", drone.get_battery())
 
 
 """ Face Recognition Embeddings"""
@@ -262,7 +268,7 @@ def perform_face_recognition(original_frame):
         
             
 
-def control_drone():
+def control_drone(is_swarm_2=False):
     global signal_takeoff
     global signal_up 
     global signal_down
@@ -278,6 +284,7 @@ def control_drone():
     global start_time
     global is_authenticated
     global person
+    global execution_counter
     
     while True:
         # ret, frame = cap.read()
@@ -289,53 +296,133 @@ def control_drone():
         if(is_authenticated):
             if signal_takeoff:
                 print('Drone take off')
-                my_drone.takeoff()
-                signal_takeoff = False
+                if not is_swarm_2:
+                    print("SWARM 1 IS TAKING OFF")
+                    my_drone.takeoff()
+                else:
+                    print("SWARM 2 IS TAKING OFF")
+                    my_drone_2.takeoff()
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_takeoff = False
+                    execution_counter = 0
                 cmd = "_"
             if signal_up:
                 print('Drone up')
-                my_drone.move_up(20)
-                signal_up = False
+                if not is_swarm_2:
+                    my_drone.move_up(20)
+                else:
+                    my_drone_2.move_down(20)
+                    
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_up = False
+                    execution_counter = 0
                 cmd = "_"
             if signal_down:
                 print('Drone down')
-                my_drone.move_down(20)
-                signal_down = False
+                if not is_swarm_2:
+                    my_drone.move_down(20)
+                else:
+                    my_drone_2.move_up(20)
+                    
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_down = False
+                    execution_counter = 0
+
                 cmd = "_"
             if signal_left:
                 print('Drone left')
-                my_drone.move_left(20)
-                signal_left = False
+                if not is_swarm_2:
+                    my_drone.move_left(20)
+                else:
+                    my_drone_2.move_right(20)
+                    
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_left = False
+                    execution_counter = 0
+                    
                 cmd = "_"
             if signal_right:
                 print('Drone right')
-                my_drone.move_right(20)
-                signal_right = False
+                if not is_swarm_2:
+                    my_drone.move_right(20)
+                else:
+                    my_drone_2.move_left(20)
+                
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_right = False
+                    execution_counter = 0
+
                 cmd = "_"
             if signal_backward:
                 print('Drone back')
-                my_drone.move_back(20)
-                signal_backward = False
+                if not is_swarm_2:
+                    my_drone.move_back(20)
+                else:
+                    my_drone_2.move_forward(20)
+                    
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_backward = False
+                    execution_counter = 0
+                    
                 cmd = "_"
             if signal_forward:
                 print('Drone forward')
-                my_drone.move_forward(20)
-                signal_forward = False
+                if not is_swarm_2:
+                    print("SWARM 1 IS MOVING FORWARD")
+                    my_drone.move_forward(20)
+                else:
+                    print("SWARM 2 IS MOVING BAKCWARD")
+                    my_drone_2.move_back(20)
+                    
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_forward = False
+                    execution_counter = 0
+
                 cmd = "_"
             if signal_land:
                 print('Drone land')
-                my_drone.land()
-                signal_land = False
+                if not is_swarm_2:
+                    my_drone.land()
+                else:
+                    my_drone_2.land()
+                
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    signal_land = False
+                    execution_counter = 0
+
                 cmd = "_"
             if is_rotating_clockwise:
                 print('Drone is rotating clock-wise')
-                my_drone.rotate_clockwise(20)
-                is_rotating_clockwise = False
+                if not is_swarm_2:
+                    my_drone.my_drone.rotate_clockwise(20)
+                else:
+                    my_drone_2.rotate_counter_clockwise(20)
+                
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    is_rotating_clockwise = False
+                    execution_counter = 0
+
                 cmd = "_" 
             if is_rotating_counter_clockwise:
                 print('Drone is rotating clock-wise')
-                my_drone.rotate_counter_clockwise(20)
-                is_rotating_counter_clockwise= False
+                if not is_swarm_2:
+                    my_drone.my_drone.rotate_counter_clockwise(20)
+                else:
+                    my_drone_2.rotate_clockwise(20)
+                
+                execution_counter += 1
+                if execution_counter >= 2:    
+                    is_rotating_counter_clockwise = False
+                    execution_counter = 0
                 cmd = "_" 
         else:
             person = 'NOT AUTHENTICATED'
@@ -361,6 +448,11 @@ cap = cv2.VideoCapture(0)
 control_drone_thread = threading.Thread(target=control_drone)
 control_drone_thread.daemon = True
 control_drone_thread.start()
+
+control_drone_thread_2 = threading.Thread(target=lambda: control_drone(True))
+control_drone_thread_2.daemon = True
+control_drone_thread_2.start()
+
 
 
 mp_face_mesh = mp.solutions.face_mesh
