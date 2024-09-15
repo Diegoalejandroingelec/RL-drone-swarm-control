@@ -17,6 +17,14 @@ import matplotlib.pyplot as plt
 import cv2
 import mediapipe as mp
 
+
+
+
+gesture_class_left = "no_action"
+gesture_class_right = "take_off"
+
+
+
 cap = cv2.VideoCapture(0)  # Use 0 for default camera or pass the video file path
 
 mp_drawing = mp.solutions.drawing_utils
@@ -89,7 +97,12 @@ def draw_face_and_hands(frame, face_landmarks, hand_landmarks,i,j):
                 x_crop_max = x_max+10 if x_max+10 < dummy_frame.shape[1] else dummy_frame.shape[1]
                 
                 i+=1
-                cv2.imwrite(f'left_hand_{i}.jpg', dummy_frame[y_crop_min: y_crop_max,x_crop_min: x_crop_max,:])
+
+                if(i%20==0):
+                    cv2.imwrite(f'./rl_dataset_left_hand/{gesture_class_left}_{i}.jpg', dummy_frame[y_crop_min: y_crop_max,x_crop_min: x_crop_max,:])
+                    with open(f'./rl_dataset_left_hand/{gesture_class_left}_{i}.txt', 'w') as file:
+                        # Write the text to the file
+                        file.write(gesture_class_left)
                 
             if(hand_label == 'Right'):
                 
@@ -100,7 +113,12 @@ def draw_face_and_hands(frame, face_landmarks, hand_landmarks,i,j):
                 x_crop_max = x_max+10 if x_max+10 < dummy_frame.shape[1] else dummy_frame.shape[1]
                 
                 j+=1
-                cv2.imwrite(f'right_hand_{j}.jpg', dummy_frame[y_crop_min: y_crop_max,x_crop_min: x_crop_max,:])
+                if(j%5==0):
+                    cv2.imwrite(f'./rl_dataset_right_hand/{gesture_class_right}_{j}.jpg', dummy_frame[y_crop_min: y_crop_max,x_crop_min: x_crop_max,:])
+                    with open(f'./rl_dataset_right_hand/{gesture_class_right}_{j}.txt', 'w') as file:
+                        # Write the text to the file
+                        file.write(gesture_class_right)
+                        print(j)
 
     return dummy_frame, i, j
 
