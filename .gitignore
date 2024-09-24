@@ -9,5 +9,5 @@
 *.zip
 *.jpg
 *.txt
-
+dqn_weights.*
 

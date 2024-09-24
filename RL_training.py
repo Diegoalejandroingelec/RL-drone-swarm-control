@@ -89,7 +89,7 @@ class ImageClassificationEnv(gym.Env):
       pass
 
 
-env = ImageClassificationEnv(image_folder='rl_dataset_left_hand')
+env = ImageClassificationEnv(image_folder='rl_train_dataset_left_hand')
 obs = env.reset()
 
 height, width, channels = env.observation_space.shape
@@ -143,21 +143,24 @@ scores = dqn.test(env, nb_episodes=10, visualize=True)
 print(np.mean(scores.history['episode_reward']))
 
 
+# Save the weights
+dqn.save_weights('dqn_weights.h5f', overwrite=True)
 
 
 
-###Random selection
-episodes = 10
-for _ in range(episodes):
-    total_reward = 0
-    while True:
-        #env.render()
-        action = env.action_space.sample()  # Replace with your agent's action
-        obs, reward, done, info = env.step(action)
 
-        total_reward+=reward
-        if done:
-            print(f'total reward for this episode: {total_reward}')
-            env.reset()
-            break
+# ###Random selection
+# episodes = 10
+# for _ in range(episodes):
+#     total_reward = 0
+#     while True:
+#         #env.render()
+#         action = env.action_space.sample()  # Replace with your agent's action
+#         obs, reward, done, info = env.step(action)
+
+#         total_reward+=reward
+#         if done:
+#             print(f'total reward for this episode: {total_reward}')
+#             env.reset()
+#             break
 
