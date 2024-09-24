@@ -10,4 +10,7 @@
 *.jpg
 *.txt
 dqn_weights.*
+dqn_weights_Blacked.*
+RL_inference.ipynb
+
 
