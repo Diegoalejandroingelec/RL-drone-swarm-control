@@ -104,7 +104,7 @@ def build_model(height, width, channels, actions):
     model.add(Convolution2D(128, (3, 3), activation='relu'))
     model.add(Convolution2D(256, (3, 3), activation='relu'))  # Add more layers
     model.add(Flatten())
-    model.add(Dense(512, activation='relu'))
+    model.add(Dense(256, activation='relu'))
     model.add(Dropout(0.3))  # Adding Dropout
     model.add(Dense(256, activation='relu'))
     model.add(Dense(actions, activation='linear'))
@@ -144,7 +144,7 @@ print(np.mean(scores.history['episode_reward']))
 
 
 # Save the weights
-dqn.save_weights('dqn_weights.h5f', overwrite=True)
+dqn.save_weights('dqn_weights_with_back_data.h5f', overwrite=True)
 
 
 

@@ -148,7 +148,7 @@ def capture_and_classify_webcam(dqn, height, width, channels):
 
                 # Press 'q' to exit
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    breakgit 
+                    break 
     finally:
         # Release the webcam and close windows
         cap.release()
@@ -187,7 +187,7 @@ dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-4))
 
 # Load the pre-trained weights
-dqn.load_weights('dqn_weights_Blacked.h5f')
+dqn.load_weights('dqn_weights_with_back_data.h5f')
 
 # Run the webcam and classify each frame
 capture_and_classify_webcam(dqn, height, width, channels)
