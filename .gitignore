@@ -10,4 +10,5 @@
 *.jpg
 *.txt
 dqn_weights.*
+dqn_weights_with_back_data.*
 

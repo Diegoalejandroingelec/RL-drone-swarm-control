@@ -98,54 +98,6 @@ def get_hands_landmarks(frame, hand_landmarks,mp_drawing,mp_hands):
     return cv2.resize(left_hand_cropped, (64, 64)), cv2.resize(right_hand_cropped, (64, 64))
 
 
-# cap = cv2.VideoCapture(0)  # Use 0 for default camera or pass the video file path
-
-
-
-# with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
-       
-#     while True:
-#         ret, frame = cap.read()
-#         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#         image = cv2.flip(image, 1)
-
-
-#         hand_results = hands.process(image)
-
-#         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-#         left_hand_cropped, right_hand_cropped = get_hands_landmarks(image, hand_results)
-#         cv2.imshow('left landmarks', left_hand_cropped)
-        
-#         cv2.imshow('right landmarks', right_hand_cropped)
-
-#         if cv2.waitKey(1) & 0xFF == ord('q'):
-#             break
-
-# cap.release()
-# cv2.destroyAllWindows()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Webcam inference function
@@ -238,7 +190,7 @@ dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-4))
 
 # Load the pre-trained weights
-dqn.load_weights('dqn_weights.h5f')
+dqn.load_weights('dqn_weights_with_back_data.h5f')
 
 # Run the webcam and classify each frame
 capture_and_classify_webcam(dqn, height, width, channels)

@@ -125,7 +125,7 @@ dqn.compile(Adam(lr=1e-4))
 
 
 # Load the weights into the agent
-dqn.load_weights('dqn_weights.h5f')
+dqn.load_weights('dqn_weights_with_back_data.h5f')
 
 scores = dqn.test(env, nb_episodes=10, visualize=False)
 print(np.mean(scores.history['episode_reward']))
