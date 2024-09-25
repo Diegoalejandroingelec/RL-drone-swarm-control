@@ -143,7 +143,8 @@ def capture_and_classify_webcam(dqn, height, width, channels):
                 cv2.imshow('left hand landmarks', left_hand_cropped)
 
                 # Display the webcam frame with the predicted class
-                cv2.putText(CamFrame, f"Control: {predicted_class}",(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                cv2.putText(CamFrame, f"CONTOL:",(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
+                cv2.putText(CamFrame, f"{predicted_class}",(10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
                 cv2.imshow('CAMERA Window', CamFrame)
 
                 # Press 'q' to exit
