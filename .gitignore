@@ -14,3 +14,4 @@ dqn_weights_Blacked.*
 RL_inference.ipynb
 checkpoint
 *.h5f.*
+*.png

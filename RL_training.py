@@ -14,12 +14,14 @@ from tensorflow.keras.optimizers import Adam
 from rl.agents import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
-from tensorflow.keras.applications import VGG16
 
 
+# Import matplotlib for plotting
+import matplotlib.pyplot as plt
+from rl.callbacks import Callback
 
 class ImageClassificationEnv(gym.Env):
-    def __init__(self, image_folder,hand):
+    def __init__(self, image_folder, hand):
         super(ImageClassificationEnv, self).__init__()
         self.hand = hand
         self.image_folder = image_folder
@@ -62,7 +64,7 @@ class ImageClassificationEnv(gym.Env):
             label = file.read().strip()
         
         if self.hand == 'left':
-            #Convert label to action space format (0 for swarm_1, 1 for swarm_2)
+            # Convert label to action space format (0 for swarm_1, 1 for swarm_2)
             if label == 'swarm_1':
                 self.image_label = 0
             elif label == 'swarm_2':
@@ -87,7 +89,7 @@ class ImageClassificationEnv(gym.Env):
                 self.image_label = 6
             elif label == 'land':
                 self.image_label = 7
-            else: ## no action
+            else:  # no action
                 self.image_label = 8
         
         return self.current_image
@@ -110,20 +112,19 @@ class ImageClassificationEnv(gym.Env):
         return obs, reward, done, {}
 
     def render(self, mode='human'):
-      pass
+        pass
 
 train_agent_for_left_hand = False
 if(train_agent_for_left_hand==True):
-    env = ImageClassificationEnv(image_folder='rl_train_dataset_left_hand',hand='left')
+    env = ImageClassificationEnv(image_folder='rl_train_dataset_left_hand', hand='left')
 else:
-    env = ImageClassificationEnv(image_folder='rl_train_dataset_right_hand',hand='right')
+    env = ImageClassificationEnv(image_folder='rl_train_dataset_right_hand', hand='right')
 
 obs = env.reset()
 
 height, width, channels = env.observation_space.shape
 
 actions = env.action_space.n
-
 
 def build_model(height, width, channels, actions):
     model = Sequential()
@@ -138,44 +139,116 @@ def build_model(height, width, channels, actions):
     model.add(Dense(actions, activation='linear'))
     return model
 
-
-
 model = build_model(height, width, channels, actions)
-
 model.summary()
-
-
-
-
 
 def build_agent(model, actions):
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.2, nb_steps=10000)
     memory = SequentialMemory(limit=50000, window_length=3)
     dqn = DQNAgent(model=model, memory=memory, policy=policy,
-                  enable_dueling_network=True, dueling_type='avg', 
+                   enable_dueling_network=True, dueling_type='avg', 
                    nb_actions=actions, nb_steps_warmup=1000
                   )
     return dqn
 
-
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-4))
 
+# Define a custom callback to log training data
+class TrainingLogger(Callback):
+    def __init__(self):
+        self.episode_rewards = []
+        self.episode_losses = []
+        self.episode_mean_q_values = []
+        self.episode_epsilon = []
+        self.episodes = []
+        self.steps = []
+        self.losses = []
+        self.q_values = []
+        self.epsilons = []
+        self.current_episode_reward = 0
+        self.episode = 0
 
-dqn.fit(env, nb_steps=10000, visualize=False, verbose=2)
+    def on_episode_begin(self, episode, logs={}):
+        self.current_episode_reward = 0
+        self.losses = []
+        self.q_values = []
+        self.epsilons = []
 
+    def on_step_end(self, step, logs={}):
+        self.current_episode_reward += logs['reward']
+        metrics = logs.get('metrics', [None, None, None])
+        loss = metrics[0]
+        q_value = metrics[1]
+        epsilon = metrics[2]
+        # Handle loss
+        if loss is not None and not np.isnan(loss):
+            self.losses.append(loss)
+        else:
+            self.losses.append(0.0)
+        # Handle q-values
+        if q_value is not None and not np.isnan(q_value):
+            self.q_values.append(q_value)
+        else:
+            self.q_values.append(0.0)
+        # Handle epsilon
+        if epsilon is not None and not np.isnan(epsilon):
+            self.epsilons.append(epsilon)
+        else:
+            self.epsilons.append(0.0)
+        self.steps.append(step)
 
-print('debugging')
+    def on_episode_end(self, episode, logs={}):
+        self.episode_rewards.append(self.current_episode_reward)
+        self.episode_losses.append(np.mean(self.losses))
+        self.episode_mean_q_values.append(np.mean(self.q_values))
+        self.episode_epsilon.append(np.mean(self.epsilons))
+        self.episodes.append(self.episode)
+        self.episode += 1
 
+training_logger = TrainingLogger()
+callbacks = [training_logger]
+
+# Train the agent
+dqn.fit(env, nb_steps=10000, visualize=False, verbose=2, callbacks=callbacks)
+
+# Test the agent
 scores = dqn.test(env, nb_episodes=10, visualize=True)
 print(np.mean(scores.history['episode_reward']))
-
 
 # Save the weights
 dqn.save_weights('dqn_weights_for_right_hand_gestures.h5f', overwrite=True)
 
+# Plotting the results
+# Plot episode rewards over episodes
+plt.figure(figsize=(12, 5))
+plt.plot(training_logger.episodes, training_logger.episode_rewards)
+plt.xlabel('Episode')
+plt.ylabel('Total Reward')
+plt.title('Episode Rewards over Episodes')
+plt.show()
 
+# Plot episode losses over episodes
+plt.figure(figsize=(12, 5))
+plt.plot(training_logger.episodes, training_logger.episode_losses)
+plt.xlabel('Episode')
+plt.ylabel('Total Loss')
+plt.title('Episode Loss over Episodes')
+plt.show()
 
+plt.figure(figsize=(12, 5))
+plt.plot(training_logger.episodes, training_logger.episode_mean_q_values)
+plt.xlabel('Episode')
+plt.ylabel('Mean Q-Values')
+plt.title('Episode Mean Q-Values over Episodes')
+plt.show()
+
+plt.figure(figsize=(12, 5))
+plt.plot(training_logger.episodes, training_logger.episode_epsilon)
+plt.xlabel('Episode')
+plt.ylabel('Epsilon')
+plt.title('Epsilon over Episodes')
+plt.show()
 
 # ###Random selection
 # episodes = 10
