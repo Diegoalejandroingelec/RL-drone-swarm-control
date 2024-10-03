@@ -19,17 +19,20 @@ from tensorflow.keras.applications import VGG16
 
 
 class ImageClassificationEnv(gym.Env):
-    def __init__(self, image_folder):
+    def __init__(self, image_folder,hand):
         super(ImageClassificationEnv, self).__init__()
-        
+        self.hand = hand
         self.image_folder = image_folder
         self.image_files = [f for f in os.listdir(image_folder) if f.endswith('.jpg')]
         
         # Observation space: A 3D array representing the image (e.g., 64x64x3 for RGB images)
         self.observation_space = spaces.Box(low=0, high=255, shape=(64, 64, 3), dtype=np.uint8)
         
-        # Action space: Two discrete actions corresponding to the two classes
-        self.action_space = spaces.Discrete(3)  # 0 for swarm_1, 1 for swarm_2, 2 for no_action
+        # Action space: Discrete actions corresponding to the classes
+        if self.hand == 'left':
+            self.action_space = spaces.Discrete(3)
+        if self.hand == 'right':
+            self.action_space = spaces.Discrete(9)
         
         self.current_step = 0
         self.max_steps = 30
@@ -58,13 +61,34 @@ class ImageClassificationEnv(gym.Env):
         with open(label_path, 'r') as file:
             label = file.read().strip()
         
-        # Convert label to action space format (0 for swarm_1, 1 for swarm_2)
-        if label == 'swarm_1':
-            self.image_label = 0
-        elif label == 'swarm_2':
-            self.image_label = 1
-        else:
-            self.image_label = 2
+        if self.hand == 'left':
+            #Convert label to action space format (0 for swarm_1, 1 for swarm_2)
+            if label == 'swarm_1':
+                self.image_label = 0
+            elif label == 'swarm_2':
+                self.image_label = 1
+            else:
+                self.image_label = 2
+        
+        if self.hand == 'right':
+            if label == 'up':
+                self.image_label = 0
+            elif label == 'down':
+                self.image_label = 1
+            elif label == 'left':
+                self.image_label = 2
+            elif label == 'right':
+                self.image_label = 3
+            elif label == 'backwards':
+                self.image_label = 4
+            elif label == 'forward':
+                self.image_label = 5
+            elif label == 'take_off':
+                self.image_label = 6
+            elif label == 'land':
+                self.image_label = 7
+            else: ## no action
+                self.image_label = 8
         
         return self.current_image
 
@@ -88,8 +112,12 @@ class ImageClassificationEnv(gym.Env):
     def render(self, mode='human'):
       pass
 
+train_agent_for_left_hand = False
+if(train_agent_for_left_hand==True):
+    env = ImageClassificationEnv(image_folder='rl_train_dataset_left_hand',hand='left')
+else:
+    env = ImageClassificationEnv(image_folder='rl_train_dataset_right_hand',hand='right')
 
-env = ImageClassificationEnv(image_folder='rl_train_dataset_left_hand')
 obs = env.reset()
 
 height, width, channels = env.observation_space.shape
@@ -144,7 +172,7 @@ print(np.mean(scores.history['episode_reward']))
 
 
 # Save the weights
-dqn.save_weights('dqn_weights_with_back_data.h5f', overwrite=True)
+dqn.save_weights('dqn_weights_for_right_hand_gestures.h5f', overwrite=True)
 
 
 

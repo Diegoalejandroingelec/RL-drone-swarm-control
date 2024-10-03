@@ -1,2 +1,2 @@
-model_checkpoint_path: "dqn_weights_with_back_data.h5f"
-all_model_checkpoint_paths: "dqn_weights_with_back_data.h5f"
+model_checkpoint_path: "dqn_weights_for_right_hand_gestures.h5f"
+all_model_checkpoint_paths: "dqn_weights_for_right_hand_gestures.h5f"

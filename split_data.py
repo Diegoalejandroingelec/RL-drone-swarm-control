@@ -4,11 +4,21 @@ import random
 from sklearn.model_selection import train_test_split
 
 # Folder containing the images and labels
-data_folder = 'rl_dataset_left_hand'
+left_hand = False
+if (left_hand == True):
 
-# Folders for the stratified split
-train_folder = 'rl_train_dataset_left_hand'
-test_folder = 'rl_test_dataset_left_hand'
+    data_folder = 'rl_dataset_left_hand'
+
+    # Folders for the stratified split
+    train_folder = 'rl_train_dataset_left_hand'
+    test_folder = 'rl_test_dataset_left_hand'
+else:
+    data_folder = 'rl_dataset_right_hand'
+
+    # Folders for the stratified split
+    train_folder = 'rl_train_dataset_right_hand'
+    test_folder = 'rl_test_dataset_right_hand'
+
 
 # Ensure the train and test folders exist
 os.makedirs(train_folder, exist_ok=True)
@@ -31,13 +41,35 @@ image_files = [f for f in os.listdir(data_folder) if f.endswith('.jpg')]
 
 # Extract class labels from image filenames
 labels = []
-for image_file in image_files:
-    if 'swarm_1' in image_file:
-        labels.append('swarm_1')
-    elif 'swarm_2' in image_file:
-        labels.append('swarm_2')
-    elif 'no_action' in image_file:
-        labels.append('no_action')
+if (left_hand == True):
+    for image_file in image_files:
+        if 'swarm_1' in image_file:
+            labels.append('swarm_1')
+        elif 'swarm_2' in image_file:
+            labels.append('swarm_2')
+        elif 'no_action' in image_file:
+            labels.append('no_action')
+else:
+    for image_file in image_files:
+        if 'up' in image_file:
+            labels.append('up')
+        elif 'backwards' in image_file:
+            labels.append('backwards')
+        elif 'forward' in image_file:
+            labels.append('forward')
+        elif 'down' in image_file:
+            labels.append('down')
+        elif 'left' in image_file:
+            labels.append('left')
+        elif 'right' in image_file:
+            labels.append('right')
+        elif 'take_off' in image_file:
+            labels.append('take_off')
+        elif 'land' in image_file:
+            labels.append('land')
+        elif 'no_action' in image_file:
+            labels.append('no_action')
+
 
 # Stratified split (80% for training and 20% for testing)
 train_images, test_images = train_test_split(image_files, test_size=0.2, stratify=labels, random_state=42)
