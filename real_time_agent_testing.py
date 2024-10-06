@@ -6,7 +6,7 @@ from tensorflow.keras.optimizers import Adam
 from rl.agents import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
-import mediapipe as mp
+
 
 
 
@@ -96,101 +96,74 @@ def get_hands_landmarks(frame, hand_landmarks,mp_drawing,mp_hands):
 
 
 # Webcam inference function
-def capture_and_classify_webcam(dqn_left,dqn_right):
-    # Open webcam
-    cap = cv2.VideoCapture(0)
-    
-    if not cap.isOpened():
-        print("Error: Cannot open webcam")
-        return
+def capture_and_classify_webcam(hands, mp_drawing, mp_hands, frame, dqn_left,dqn_right):
 
     try:
-        mp_drawing = mp.solutions.drawing_utils
-        mp_hands = mp.solutions.hands
-        hands = mp_hands.Hands()
-        with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    print("Error: Failed to capture image")
-                    break
 
-                # Preprocess the image (resize to 64x64 and normalize)
-                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                image = cv2.flip(image, 1)
-                hand_results = hands.process(image)
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = cv2.flip(image, 1)
+        hand_results = hands.process(image)
 
-                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-                left_hand_cropped, right_hand_cropped, CamFrame = get_hands_landmarks(image, hand_results,mp_drawing,mp_hands)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        left_hand_cropped, right_hand_cropped, CamFrame = get_hands_landmarks(image, hand_results,mp_drawing,mp_hands)
 
-                # cv2.imshow('left landmarks', left_hand_cropped)
-        
-                # cv2.imshow('right landmarks', right_hand_cropped)
+        left_hand_cropped = left_hand_cropped.astype(np.float32) / 255.0
+        right_hand_cropped = right_hand_cropped.astype(np.float32) / 255.0
 
+        # Get prediction (action) from the agent
+        action_left_hand = dqn_left.forward(left_hand_cropped)
+        action_right_hand = dqn_right.forward(right_hand_cropped)
+        # Map the action to class names
+        class_names_left_hand = ['swarm_1', 'swarm_2', 'no_action']
+        predicted_class_left_hand = class_names_left_hand[action_left_hand]
 
-                left_hand_cropped = left_hand_cropped.astype(np.float32) / 255.0
+        class_names_right_hand = ['up', 'down', 'left','right','backwards','forward','take_off','land','no_action']
+        predicted_class_right_hand = class_names_right_hand[action_right_hand]
 
-                right_hand_cropped = right_hand_cropped.astype(np.float32) / 255.0
-                # left_hand_cropped = np.expand_dims(left_hand_cropped, axis=0)  # Add batch dimension
-                # left_hand_cropped = np.expand_dims(left_hand_cropped, axis=0)  # Add window length dimension for DQN
-
-                # Get prediction (action) from the agent
-                action_left_hand = dqn_left.forward(left_hand_cropped)
-                action_right_hand = dqn_right.forward(right_hand_cropped)
-                # Map the action to class names
-                class_names_left_hand = ['swarm_1', 'swarm_2', 'no_action']
-                predicted_class_left_hand = class_names_left_hand[action_left_hand]
-
-                class_names_right_hand = ['up', 'down', 'left','right','backwards','forward','take_off','land','no_action']
-                predicted_class_right_hand = class_names_right_hand[action_right_hand]
-
-                print(f"Predicted class left hand: {predicted_class_left_hand} Predicted class right hand: {predicted_class_right_hand}")
+        print(f"Predicted class left hand: {predicted_class_left_hand} Predicted class right hand: {predicted_class_right_hand}")
 
 
 
-                # Get the dimensions of the frame
-                height, width, channels = CamFrame.shape
+        # Get the dimensions of the frame
+        height, width, channels = CamFrame.shape
 
-                # Check if the frame is large enough to place the cropped images
-                if height >= 64 and width >= 64:
-                    # Merge left_hand_cropped into CamFrame at bottom left corner
-                    CamFrame[height - 64 : height, 0 : 64] = left_hand_cropped*255
+        # Check if the frame is large enough to place the cropped images
+        if height >= 64 and width >= 64:
+            # Merge left_hand_cropped into CamFrame at bottom left corner
+            CamFrame[height - 64 : height, 0 : 64] = left_hand_cropped*255
 
-                    # Merge right_hand_cropped into CamFrame at bottom right corner
-                    CamFrame[height - 64 : height, width - 64 : width] = right_hand_cropped*255
-                else:
-                    print("CamFrame is too small to overlay the images.")
+            # Merge right_hand_cropped into CamFrame at bottom right corner
+            CamFrame[height - 64 : height, width - 64 : width] = right_hand_cropped*255
+        else:
+            print("CamFrame is too small to overlay the images.")
 
-                # Define font parameters
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                font_scale = 1
+        # Define font parameters
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
 
-                # Left corner text (Top Left)
-                cv2.putText(CamFrame, "SWARM", (10, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
-                cv2.putText(CamFrame, f"{predicted_class_left_hand}", (10, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
+        # Left corner text (Top Left)
+        cv2.putText(CamFrame, "SWARM", (10, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
+        cv2.putText(CamFrame, f"{predicted_class_left_hand}", (10, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
 
-                # Calculate text sizes for right corner text
-                (text_width1, _), _ = cv2.getTextSize("ACTION", font, font_scale, 1)
-                (text_width2, _), _ = cv2.getTextSize(predicted_class_right_hand, font, font_scale, 2)
+        # Calculate text sizes for right corner text
+        (text_width1, _), _ = cv2.getTextSize("ACTION", font, font_scale, 1)
+        (text_width2, _), _ = cv2.getTextSize(predicted_class_right_hand, font, font_scale, 2)
 
-                # Right corner text positions
-                x1 = width - text_width1 - 10  # 10 pixels from the right edge
-                x2 = width - text_width2 - 10
+        # Right corner text positions
+        x1 = width - text_width1 - 10  # 10 pixels from the right edge
+        x2 = width - text_width2 - 10
 
-                # Right corner text (Top Right)
-                cv2.putText(CamFrame, "ACTION", (x1, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
-                cv2.putText(CamFrame, f"{predicted_class_right_hand}", (x2, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
+        # Right corner text (Top Right)
+        cv2.putText(CamFrame, "ACTION", (x1, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
+        cv2.putText(CamFrame, f"{predicted_class_right_hand}", (x2, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
 
-                # Display the combined frame
-                cv2.imshow('CAMERA Window', CamFrame)
 
-                # Press 'q' to exit
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break 
-    finally:
-        # Release the webcam and close windows
-        cap.release()
-        cv2.destroyAllWindows()
+
+
+        return predicted_class_left_hand,predicted_class_right_hand,CamFrame
+    except:
+        print('SOMETHING WENT TERRIBLY WRONG')
+
 
 # Build the model (same as your original code)
 def build_model(height, width, channels, actions):
@@ -215,27 +188,41 @@ def build_agent(model, actions):
                    nb_actions=actions, nb_steps_warmup=1000)
     return dqn
 
-# Set up the environment parameters
-height, width, channels = 64, 64, 3
-actions_left_hand = 3
 
-# Create the model and agent
-model_left_hand = build_model(height, width, channels, actions_left_hand)
-dqn_left = build_agent(model_left_hand, actions_left_hand)
-dqn_left.compile(Adam(lr=1e-4))
+def initialize_agents():
+    # Set up the environment parameters
+    height, width, channels = 64, 64, 3
+    actions_left_hand = 3
 
-# Load the pre-trained weights
-dqn_left.load_weights('dqn_weights_with_back_data.h5f')
+    # Create the model and agent
+    model_left_hand = build_model(height, width, channels, actions_left_hand)
+    dqn_left = build_agent(model_left_hand, actions_left_hand)
+    dqn_left.compile(Adam(lr=1e-4))
 
-actions_right_hand = 9
+    # Load the pre-trained weights
+    dqn_left.load_weights('dqn_weights_with_back_data.h5f')
 
-# Create the model and agent
-model_right_hand = build_model(height, width, channels, actions_right_hand)
-dqn_right = build_agent(model_right_hand, actions_right_hand)
-dqn_right.compile(Adam(lr=1e-4))
+    actions_right_hand = 9
 
-# Load the pre-trained weights
-dqn_right.load_weights('dqn_weights_for_right_hand_gestures.h5f')
+    # Create the model and agent
+    model_right_hand = build_model(height, width, channels, actions_right_hand)
+    dqn_right = build_agent(model_right_hand, actions_right_hand)
+    dqn_right.compile(Adam(lr=1e-4))
 
-# Run the webcam and classify each frame
-capture_and_classify_webcam(dqn_left, dqn_right)
+    # Load the pre-trained weights
+    dqn_right.load_weights('dqn_weights_for_right_hand_gestures.h5f')
+
+    return dqn_left, dqn_right
+
+
+def RL_image_classifier(hands, mp_drawing, mp_hands, frame, dqn_left, dqn_right):
+
+    # Run the webcam and classify each frame
+    predicted_class_left_hand,predicted_class_right_hand, annotated_frame= capture_and_classify_webcam(hands,
+                                                                                                       mp_drawing,
+                                                                                                       mp_hands,
+                                                                                                       frame,
+                                                                                                       dqn_left,
+                                                                                                       dqn_right)
+
+    return predicted_class_left_hand,predicted_class_right_hand, annotated_frame

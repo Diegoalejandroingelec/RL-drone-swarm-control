@@ -20,7 +20,7 @@ import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix
 
 
-test_agent_for_left_hand = False
+test_agent_for_left_hand = True
 class ImageClassificationEnv(gym.Env):
     def __init__(self, image_folder, hand):
         super(ImageClassificationEnv, self).__init__()
