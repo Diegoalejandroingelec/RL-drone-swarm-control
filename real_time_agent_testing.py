@@ -120,10 +120,6 @@ def capture_and_classify_webcam(hands, mp_drawing, mp_hands, frame, dqn_left,dqn
         class_names_right_hand = ['up', 'down', 'left','right','backwards','forward','take_off','land','no_action']
         predicted_class_right_hand = class_names_right_hand[action_right_hand]
 
-        print(f"Predicted class left hand: {predicted_class_left_hand} Predicted class right hand: {predicted_class_right_hand}")
-
-
-
         # Get the dimensions of the frame
         height, width, channels = CamFrame.shape
 
