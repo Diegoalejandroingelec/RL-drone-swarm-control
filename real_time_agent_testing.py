@@ -7,8 +7,10 @@ from rl.agents import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 
-
-
+def draw_outlined_text(image, text, position, font, font_scale, color, thickness, outline_color, outline_thickness):
+    image = cv2.putText(image, text, position, font, font_scale, outline_color, outline_thickness, lineType=cv2.LINE_AA)
+    image = cv2.putText(image, text, position, font, font_scale, color, thickness, lineType=cv2.LINE_AA)
+    return image
 
 def get_hands_landmarks(frame, hand_landmarks,mp_drawing,mp_hands):
     h, w, c = frame.shape
@@ -41,21 +43,20 @@ def get_hands_landmarks(frame, hand_landmarks,mp_drawing,mp_hands):
             hand_label = hand_handedness.classification[0].label
 
             # Draw hand bounding box with label
-            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
-            cv2.putText(frame, hand_label, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
-            
+            # cv2.putText(frame, hand_label, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
         
             #if(handedness)
             # Draw hand landmarks
             
             if (hand_label=='Left'):
+                cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 255), 2)
                 mp_drawing.draw_landmarks(
                     dummy_frame, landmarks, mp_hands.HAND_CONNECTIONS,
                     mp_drawing.DrawingSpec(color=(255, 0, 255), thickness=5, circle_radius=1),
-                    
                     mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=15, circle_radius=1),
                 )
             else:
+                cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
                 mp_drawing.draw_landmarks(
                     dummy_frame, landmarks, mp_hands.HAND_CONNECTIONS,
                     # mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=25, circle_radius=2),
@@ -99,7 +100,6 @@ def get_hands_landmarks(frame, hand_landmarks,mp_drawing,mp_hands):
 def capture_and_classify_webcam(hands, mp_drawing, mp_hands, frame, dqn_left,dqn_right):
 
     try:
-
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image = cv2.flip(image, 1)
         hand_results = hands.process(image)
@@ -125,21 +125,24 @@ def capture_and_classify_webcam(hands, mp_drawing, mp_hands, frame, dqn_left,dqn
 
         # Check if the frame is large enough to place the cropped images
         if height >= 64 and width >= 64:
+            translateX, translateY = 16, 16
             # Merge left_hand_cropped into CamFrame at bottom left corner
-            CamFrame[height - 64 : height, 0 : 64] = left_hand_cropped*255
+            CamFrame[height - 64 - translateY : height - translateY, 0 + translateX : 64 + translateX] = left_hand_cropped*255
 
+            translateX, translateY = 86, 16
             # Merge right_hand_cropped into CamFrame at bottom right corner
-            CamFrame[height - 64 : height, width - 64 : width] = right_hand_cropped*255
+            CamFrame[height - 64 - translateY : height - translateY, 0 + translateX : 64 + translateX] = right_hand_cropped*255
         else:
             print("CamFrame is too small to overlay the images.")
 
         # Define font parameters
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
+        font_scale = 0.6
 
         # Left corner text (Top Left)
-        cv2.putText(CamFrame, "SWARM", (10, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
-        cv2.putText(CamFrame, f"{predicted_class_left_hand}", (10, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
+        CamFrame = draw_outlined_text(CamFrame, f"{predicted_class_left_hand}", (16, 30), font, font_scale, (0, 0,255), 2, (255, 255, 255), 2)
+        # cv2.putText(CamFrame, "SWARM", (10, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
+        # cv2.putText(CamFrame, f"{predicted_class_left_hand}", (10, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
 
         # Calculate text sizes for right corner text
         (text_width1, _), _ = cv2.getTextSize("ACTION", font, font_scale, 1)
@@ -150,11 +153,9 @@ def capture_and_classify_webcam(hands, mp_drawing, mp_hands, frame, dqn_left,dqn
         x2 = width - text_width2 - 10
 
         # Right corner text (Top Right)
-        cv2.putText(CamFrame, "ACTION", (x1, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
-        cv2.putText(CamFrame, f"{predicted_class_right_hand}", (x2, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
-
-
-
+        CamFrame = draw_outlined_text(CamFrame, f"{predicted_class_right_hand}", (16, 50), font, font_scale, (0, 255, 0), 2, (255, 255, 255), 2)
+        # cv2.putText(CamFrame, "ACTION", (x1, 30), font, font_scale, (0, 255, 0), 1, cv2.LINE_AA)
+        # cv2.putText(CamFrame, f"{predicted_class_right_hand}", (x2, 60), font, font_scale, (0, 0, 255), 2, cv2.LINE_AA)
 
         return predicted_class_left_hand,predicted_class_right_hand,CamFrame
     except:

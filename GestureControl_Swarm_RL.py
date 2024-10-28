@@ -7,7 +7,7 @@ import pygame
 from datetime import datetime
 import mediapipe as mp
 from djitellopy import TelloSwarm
-from real_time_agent_testing import initialize_agents, RL_image_classifier
+from real_time_agent_testing import initialize_agents, RL_image_classifier, get_hands_landmarks
 import pickle
 """ Initialization of variables"""
 weights = 'v9_c_best.pt'
@@ -38,9 +38,11 @@ scheduler = BackgroundScheduler()
 
 """Pygame"""
 pygame.init()
-screen_width = 960
-screen_height = 720
-window = pygame.display.set_mode((screen_width,screen_height))
+# Set screen to fullscreen mode
+# screen_width = 1920
+# screen_height = 1080
+window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+screen_width, screen_height = window.get_size()
 IMAGE_DIR = './assets/'
 person = '-'
 
@@ -53,33 +55,36 @@ hands = mp_hands.Hands()
 
 
 
-my_drone = TelloSwarm.fromIps([
-    # "192.168.0.2",
-    "192.168.250.213"
-    # "192.168.0.3",
-])
+my_drone = None
+my_drone_2 = None
 
-my_drone_2 = TelloSwarm.fromIps([
-    # "192.168.0.2",
-    "192.168.250.237"
-    # "192.168.0.3",
-])
+# my_drone = TelloSwarm.fromIps([
+#     # "192.168.0.2",
+#     # "192.168.250.213"
+#     # "192.168.0.3",
+# ])
+
+# my_drone_2 = TelloSwarm.fromIps([
+#     # "192.168.0.2",
+#     # "192.168.250.237"
+#     # "192.168.0.3",
+# ])
 
 
 
-my_drone.connect()
-my_drone_2.connect()
+# my_drone.connect()
+# my_drone_2.connect()
 
-print('BATTERY-----------------------------------------------------------------')
-for drone in my_drone:
-    print(drone)
-    print(drone.get_battery())
+# print('BATTERY-----------------------------------------------------------------')
+# for drone in my_drone:
+#     print(drone)
+#     print(drone.get_battery())
 
-for drone in my_drone_2:
-    print(drone)
-    print(drone.get_battery())
+# for drone in my_drone_2:
+#     print(drone)
+#     print(drone.get_battery())
 
-print('BATTERY-----------------------------------------------------------------')
+# print('BATTERY-----------------------------------------------------------------')
 
 
 """ Face Recognition Embeddings"""
@@ -364,9 +369,9 @@ cap = cv2.VideoCapture(0)
 # get_frame_thread.start()
 
 # Start the control_drone thread
-control_drone_thread = threading.Thread(target=control_drone)
-control_drone_thread.daemon = True
-control_drone_thread.start()
+# control_drone_thread = threading.Thread(target=control_drone)
+# control_drone_thread.daemon = True
+# control_drone_thread.start()
 
 
 
@@ -400,7 +405,13 @@ frame_image = pygame.transform.scale(frame_image, (screen_width, screen_height))
     
 button_rects = []
 original_buttons = []
-button_positions = [(820,510), (885, 575), (820, 640), (755, 575), (820, 575), (350,640), (415,640), (480, 640), (545, 640)]
+button_positions_original = [(820,510), (885, 575), (820, 640), (755, 575), (820, 575), (350,640), (415,640), (480, 640), (545, 640)]
+
+button_positions = [(1430, 637.5), (1500, 718.75), (1430, 800.0), (1360, 718.75), (1430, 718.75), (645, 820), (730, 820.0), (815.0, 820.0), (900, 820.0)]
+
+# for pos in button_positions_original:
+#     button_positions.append((pos[0] * screen_width / 960, pos[1] * screen_height / 720))
+# print(button_positions)
 
 for i in range(len(button_images)):
     button_images[i] = pygame.transform.scale(button_images[i], (65, 65))
@@ -414,8 +425,6 @@ click_alpha = 50   # More transparent on click
 
 click_effect_duration = 200  # Duration of the click effect in milliseconds
 last_click_time = 0  # Timestamp of the last click
-
-window = pygame.display.set_mode((960,720))
 
 """"""
 
@@ -458,8 +467,9 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
-                    
-            predicted_class_left_hand, predicted_classes, annotated_frame = RL_image_classifier(hands, mp_drawing, mp_hands, original_frame, dqn_left, dqn_right)
+
+            predicted_class_left_hand, predicted_classes, image = RL_image_classifier(hands, mp_drawing, mp_hands, original_frame, dqn_left, dqn_right)
+            # predicted_class_left_hand, predicted_classes, annotated_frame = None, None, None
             swarm = predicted_class_left_hand
             #print(f"Predicted class left hand: {predicted_class_left_hand} Predicted class right hand: {predicted_classes}")
 
@@ -494,13 +504,19 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
             # battery = my_drone.get_battery()
             battery = 100
 
-            image=cv2.resize(image,(960,720))
-            image = cv2.putText(image, f'Battery: {str(battery)} %', (760, 50), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
-            image = cv2.putText(image, f'Command: {cmd}', (15, 650), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
-            image = cv2.putText(image, f'Person: {person}', (15, 680), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
+            # drawing a rectangle as a placeholder
+            # Create a semi-transparent surface
+            rect_width, rect_height = 300, 100
+            transparent_rect = pygame.Surface((rect_width, rect_height), pygame.SRCALPHA)
+            transparent_rect.fill((0, 0, 0, 128))  # RGBA with 128 alpha (50% transparent)
+
+            image=cv2.resize(image,(screen_width,screen_height))
+            image = draw_outlined_text(image, f'Battery: {str(battery)} %', (1365, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2, (0,0,0), 1)
+            # image = cv2.putText(image, f'Battery: {str(battery)} %', (1365, 50), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
+            # image = cv2.putText(image, f'Command: {cmd}', (15, 650), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
+            # image = cv2.putText(image, f'Person: {person}', (15, 680), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
             
-            
-            image=cv2.resize(image,(960,720))
+            image=cv2.resize(image,(screen_width,screen_height))
             """PyGame window surface overlay"""
             
             frame_surface = pygame.surfarray.make_surface(image.swapaxes(0, 1))
@@ -526,6 +542,7 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
                         button_images[i].set_alpha(default_alpha)
                         
                 window.blit(button_images[i], button_rects[i])
+            
             pygame.display.update()
             """"""
             
