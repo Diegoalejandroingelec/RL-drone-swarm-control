@@ -7,10 +7,10 @@ import pygame
 from datetime import datetime
 import mediapipe as mp
 from djitellopy import TelloSwarm
-from real_time_agent_testing import initialize_agents, RL_image_classifier, get_hands_landmarks
+from real_time_agent_testing import initialize_agents, RL_image_classifier
 import pickle
 """ Initialization of variables"""
-weights = 'v9_c_best.pt'
+# weights = 'v9_c_best.pt'
 device = 0 # cuda device, i.e. 0 or 0,1,2,3 or cpu
 imgsz=(640, 640)
 
@@ -53,22 +53,20 @@ face_mesh = mp_face_mesh.FaceMesh()
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
 
-
-
 my_drone = None
 my_drone_2 = None
 
-# my_drone = TelloSwarm.fromIps([
-#     # "192.168.0.2",
-#     # "192.168.250.213"
-#     # "192.168.0.3",
-# ])
+my_drone = TelloSwarm.fromIps([
+    "192.168.0.2",
+    # "192.168.250.213"
+    # "192.168.0.3",
+])
 
-# my_drone_2 = TelloSwarm.fromIps([
-#     # "192.168.0.2",
-#     # "192.168.250.237"
-#     # "192.168.0.3",
-# ])
+my_drone_2 = TelloSwarm.fromIps([
+    # "192.168.0.2",
+    # "192.168.250.237"
+    "192.168.0.3",
+])
 
 
 
@@ -117,6 +115,21 @@ def picture_countdown_completed():
         return False, True # Not finished, there is a countdown
     
     return False, False # Not planned condition
+
+
+def get_lowest_battery(swarm1, swarm2):
+    # Retrieve battery levels for all drones in each swarm
+    battery_levels_swarm1 = [drone.get_battery() for drone in swarm1]
+    battery_levels_swarm2 = [drone.get_battery() for drone in swarm2]
+
+    # Find the minimum battery level in each swarm
+    min_battery_swarm1 = min(battery_levels_swarm1) if battery_levels_swarm1 else None
+    min_battery_swarm2 = min(battery_levels_swarm2) if battery_levels_swarm2 else None
+
+    # Determine the overall lowest battery level between the two swarms
+    lowest_battery = min(min_battery_swarm1, min_battery_swarm2) if min_battery_swarm1 and min_battery_swarm2 else None
+
+    return lowest_battery
 
 def draw_face_and_hands(frame, face_landmarks, hand_landmarks):
     # Get the center of the frame (x-coordinate)
@@ -394,7 +407,7 @@ button_images = [pygame.image.load(f'{IMAGE_DIR}up.png').convert_alpha(),
                  pygame.image.load(f'{IMAGE_DIR}right.png').convert_alpha(), 
                  pygame.image.load(f'{IMAGE_DIR}down.png').convert_alpha(), 
                  pygame.image.load(f'{IMAGE_DIR}left.png').convert_alpha(), 
-                 pygame.image.load(f'{IMAGE_DIR}picture.png').convert_alpha(), 
+                #  pygame.image.load(f'{IMAGE_DIR}picture.png').convert_alpha(), 
                  pygame.image.load(f'{IMAGE_DIR}backward.png').convert_alpha(), 
                  pygame.image.load(f'{IMAGE_DIR}take-off.png').convert_alpha(),
                  pygame.image.load(f'{IMAGE_DIR}land.png').convert_alpha(), 
@@ -405,9 +418,11 @@ frame_image = pygame.transform.scale(frame_image, (screen_width, screen_height))
     
 button_rects = []
 original_buttons = []
-button_positions_original = [(820,510), (885, 575), (820, 640), (755, 575), (820, 575), (350,640), (415,640), (480, 640), (545, 640)]
+# button_positions_original = [(820,510), (885, 575), (820, 640), (755, 575), (820, 575), (350,640), (415,640), (480, 640), (545, 640)]
+button_positions_original = [(820,510), (885, 575), (820, 640), (755, 575), (350,640), (415,640), (480, 640), (545, 640)]
 
-button_positions = [(1430, 637.5), (1500, 718.75), (1430, 800.0), (1360, 718.75), (1430, 718.75), (645, 820), (730, 820.0), (815.0, 820.0), (900, 820.0)]
+# button_positions = [(1430, 637.5), (1500, 718.75), (1430, 800.0), (1360, 718.75), (1430, 718.75), (645, 820), (730, 820.0), (815.0, 820.0), (900, 820.0)]
+button_positions = [(1430, 637.5), (1500, 718.75), (1430, 800.0), (1360, 718.75), (645, 820), (730, 820.0), (815.0, 820.0), (900, 820.0)]
 
 # for pos in button_positions_original:
 #     button_positions.append((pos[0] * screen_width / 960, pos[1] * screen_height / 720))
@@ -447,6 +462,7 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
         if ret:
             original_frame = frame.copy() 
 
+
             # cv2.imshow(" frame", frame)
             image = frame.copy()
             face_results = face_mesh.process(image)
@@ -478,12 +494,12 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
             # cv2.imshow("Detection frame", im0)
         
             # Draw the center line of the frame
-            cv2.line(image, (frame_center_x, 0), (frame_center_x, frame_h), (255, 0, 0), 2)
-            cv2.line(image, (frame_center_x + 120, 0), (frame_center_x + 120, frame_h), (0, 0, 255), 2)
-            cv2.line(image, (frame_center_x - 120, 0), (frame_center_x - 120, frame_h), (0, 0, 255), 2)
+            # cv2.line(image, (frame_center_x, 0), (frame_center_x, frame_h), (255, 0, 0), 2)
+            # cv2.line(image, (frame_center_x + 120, 0), (frame_center_x + 120, frame_h), (0, 0, 255), 2)
+            # cv2.line(image, (frame_center_x - 120, 0), (frame_center_x - 120, frame_h), (0, 0, 255), 2)
 
             # Draw the center point of the face
-            cv2.circle(image, (face_center_x, face_center_y), 5, (0, 0, 255), -1)
+            # cv2.circle(image, (face_center_x, face_center_y), 5, (0, 0, 255), -1)
             
             # Calculate the distance from the face center to the frame's center line
             x_distance = face_center_x - frame_center_x
@@ -500,7 +516,7 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
                         is_rotating_counter_clockwise = True
 
             # Visualize the x distance
-            cv2.line(image, (face_center_x, face_center_y), (frame_center_x, face_center_y), (250, 255, 0), 2)              
+            # cv2.line(image, (face_center_x, face_center_y), (frame_center_x, face_center_y), (250, 255, 0), 2)              
             # battery = my_drone.get_battery()
             battery = 100
 
@@ -511,13 +527,24 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
             transparent_rect.fill((0, 0, 0, 128))  # RGBA with 128 alpha (50% transparent)
 
             image=cv2.resize(image,(screen_width,screen_height))
-            image = draw_outlined_text(image, f'Battery: {str(battery)} %', (1365, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2, (0,0,0), 1)
+
+            lowest_battery = 0
+            try:
+                # Usage within the main loop or a specific function
+                lowest_battery = get_lowest_battery(my_drone, my_drone_2)
+            except:
+                pass
+
+            image = draw_outlined_text(image, f'Battery: {str(lowest_battery)} %', (1365, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2, (0,0,0), 1)
             # image = cv2.putText(image, f'Battery: {str(battery)} %', (1365, 50), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
             # image = cv2.putText(image, f'Command: {cmd}', (15, 650), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
             # image = cv2.putText(image, f'Person: {person}', (15, 680), cv2.FONT_HERSHEY_SIMPLEX,  0.8, (255, 255, 255), 1, cv2.LINE_AA)
             
             image=cv2.resize(image,(screen_width,screen_height))
             """PyGame window surface overlay"""
+            
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
             
             frame_surface = pygame.surfarray.make_surface(image.swapaxes(0, 1))
             
@@ -635,6 +662,7 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
                          signal_forward=True
                          cmd = "FORWARD"
                 # Mouse button down event
+
                  elif event.type == pygame.MOUSEBUTTONDOWN:
                      for i in range(len(button_rects)):
                          if button_rects[i].collidepoint(event.pos):
@@ -652,17 +680,17 @@ with mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence
                              elif i == 1:
                                  signal_right = True
                                  cmd = "Move RIGHT"
-                             elif i == 6:
+                             elif i == 5:
                                  signal_takeoff = True
                                  cmd = "TAKE-OFF"
                                  flying = True
-                             elif i == 7:
+                             elif i == 6:
                                  signal_land = True
                                  cmd = "LAND"
-                             elif i == 5:
+                             elif i == 4:
                                  signal_backward=True
                                  cmd = "BACK"
-                             elif i == 8:
+                             elif i == 7:
                                  signal_forward=True
                                  cmd = "FORWARD"
                                               
