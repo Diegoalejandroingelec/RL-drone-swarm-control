@@ -10,7 +10,6 @@ from djitellopy import TelloSwarm
 from real_time_agent_testing import initialize_agents, RL_image_classifier, get_hands_landmarks
 import pickle
 """ Initialization of variables"""
-weights = 'v9_c_best.pt'
 device = 0 # cuda device, i.e. 0 or 0,1,2,3 or cpu
 imgsz=(640, 640)
 
@@ -39,10 +38,10 @@ scheduler = BackgroundScheduler()
 """Pygame"""
 pygame.init()
 # Set screen to fullscreen mode
-# screen_width = 1920
-# screen_height = 1080
-window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-screen_width, screen_height = window.get_size()
+screen_width = 960
+screen_height = 720
+window = pygame.display.set_mode((screen_width, screen_height))
+# screen_width, screen_height = window.get_size()
 IMAGE_DIR = './assets/'
 person = '-'
 
@@ -58,33 +57,33 @@ hands = mp_hands.Hands()
 my_drone = None
 my_drone_2 = None
 
-# my_drone = TelloSwarm.fromIps([
-#     # "192.168.0.2",
-#     # "192.168.250.213"
-#     # "192.168.0.3",
-# ])
+my_drone = TelloSwarm.fromIps([
+    # "192.168.0.2",
+    "192.168.63.213"
+    # "192.168.0.3",
+])
 
-# my_drone_2 = TelloSwarm.fromIps([
-#     # "192.168.0.2",
-#     # "192.168.250.237"
-#     # "192.168.0.3",
-# ])
+my_drone_2 = TelloSwarm.fromIps([
+    # "192.168.0.2",
+    "192.168.63.237"
+    # "192.168.0.3",
+])
 
 
 
-# my_drone.connect()
-# my_drone_2.connect()
+my_drone.connect()
+my_drone_2.connect()
 
-# print('BATTERY-----------------------------------------------------------------')
-# for drone in my_drone:
-#     print(drone)
-#     print(drone.get_battery())
+print('BATTERY-----------------------------------------------------------------')
+for drone in my_drone:
+    print(drone)
+    print(drone.get_battery())
 
-# for drone in my_drone_2:
-#     print(drone)
-#     print(drone.get_battery())
+for drone in my_drone_2:
+    print(drone)
+    print(drone.get_battery())
 
-# print('BATTERY-----------------------------------------------------------------')
+print('BATTERY-----------------------------------------------------------------')
 
 
 """ Face Recognition Embeddings"""
@@ -369,9 +368,9 @@ cap = cv2.VideoCapture(0)
 # get_frame_thread.start()
 
 # Start the control_drone thread
-# control_drone_thread = threading.Thread(target=control_drone)
-# control_drone_thread.daemon = True
-# control_drone_thread.start()
+control_drone_thread = threading.Thread(target=control_drone)
+control_drone_thread.daemon = True
+control_drone_thread.start()
 
 
 
